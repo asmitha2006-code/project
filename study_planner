@@ -1,0 +1,177 @@
+import json
+from datetime import datetime
+
+file_name="study_planner.json"
+
+
+def load_data():
+    try:
+        with open(file_name,'r') as file:
+            data=json.load(file)
+            if "streak" not in data:
+                data["streak"] = 0
+            return data
+    except FileNotFoundError:
+        return {}
+
+
+def save_data(data):
+    with open(file_name,'w') as file:
+        json.dump(data,file,indent=4)
+
+
+def add_tasks(today,data):
+    tasks=[]
+    n=int(input("Enter the number of tasks to be added : "))
+
+    for i in range(n):
+        task=input(f"Enter task{i+1} : ")
+        tasks.append({"task":task ,"completed":False,"priority":None})
+    data[today]=tasks
+    save_data(data)
+    print('TASKS ADDED SUCCESSFULLY✅')
+
+def set_priority(data,today=None):
+    if today is None:
+        today = str(date.today())
+
+    if today not in data:
+        print("No tasks for today ❌")
+        return
+    tasks=data[today]
+    n=int(input("No. of tasks to be prioritised: "))
+    for i in range(n):
+        task_name=input("Task to be prioritised:")
+        priority=input("Priority:")
+
+        for task in tasks:
+            if task['task']==task_name:
+                task['priority']=priority
+    save_data(data)
+    print("Priority is set✅")
+
+
+def mark_task_completed(today,data):
+    if today not in data:
+        print(f"No tasks found for {today}🥲")
+        return
+    tasks=data[today]
+    n=int(input("Enter the number of tasks to be marked : "))
+
+    for i in range(n):
+        task_name=input("enter the task:")
+        found=False
+        for task in tasks:
+            if task['task']==task_name:
+                task['completed']=True
+                found=True
+                break
+
+
+        if not found:
+             print("Task not found👎🏻")
+             return
+
+
+    tasks=data[today]
+    save_data(data)
+    print('Tasks are marked 👍')
+
+
+
+from datetime import date
+
+def list_tasks(data,today=None):
+    if today is None:
+        today = str(date.today())
+
+    if today not in data:
+        print("No tasks for today ❌")
+        return
+
+    for i, task in enumerate(data[today], start=1):
+        status = "✅ Completed" if task["completed"] else "❌ Pending"
+        print(f"{i}. {task['task']} — {status},{task['priority']}")
+
+
+def show_progress(today,data):
+    if today not in data:
+        print("No tasks for today❌")
+        return
+    tasks=data[today]
+    done=sum(task['completed'] for task in tasks)
+    total=len(tasks)
+
+    percentage=(done/total)*100
+    print(f"Today's completion : {percentage:.2f}%📈")
+
+
+def delete_task(data, today=None):
+    from datetime import date
+
+    if today is None:
+        today = str(date.today())
+
+    if today not in data or not data[today]:
+        print("No tasks to delete ❌")
+        return
+    list_tasks(data)
+    n=int(input("Enter the number of tasks to be deleted : "))
+
+    for i in range(n):
+         try:
+             choice = int(input("\nEnter task number to delete: "))
+
+         except ValueError:
+             print("Please enter a valid number ❌")
+             return
+         confirm = input("Are you sure? (y/n): ")
+         if confirm:
+             deleted_task = data[today].pop(choice - 1)
+
+    if not data[today]:
+        del data[today]
+    save_data(data)
+    print(f"Task '{deleted_task['task']}' deleted successfully 🗑️")
+    print("List of tasks after deleting the task is:\n")
+    list_tasks(data)
+
+
+def main():
+    data=load_data()
+    today=datetime.now().strftime("%Y-%m-%d")
+
+    while True:
+        print("\n-----DAILY STUDY PLANNER-----")
+        print("1.ADD TASKS")
+        print("2.SET PRIORITY")
+        print("3.MARK TASK AS COMPLETED")
+        print("4.SHOW PROGRESS")
+        print("5.LIST TASKS")
+        print("6.DELETE TASK")
+        print("7.EXIT")
+
+        choice=int(input("Enter your choice : "))
+
+        match choice:
+            case 1:
+                add_tasks(today,data)
+            case 2:
+                set_priority(data)
+            case 3:
+                mark_task_completed(today,data)
+            case 4:
+                show_progress(today,data)
+            case 5:
+                list_tasks(data)
+            case 6:
+                delete_task(data)
+            case 7:
+                print("KEEP IT UP!👏🏻GOODBYE!👋🏻")
+                break
+            case 8:
+                print("Invalid choice,try again")
+
+
+if __name__=="__main__":
+    main()
