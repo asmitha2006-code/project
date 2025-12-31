@@ -1,5 +1,5 @@
 #Daily Study Planner
-####Video demo:
+
 ####Description:
 
 A command-line based **Daily Study Planner** built using Python that helps users organize tasks, set priorities, track completion, and monitor daily progress.
