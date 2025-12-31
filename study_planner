@@ -1,140 +1,142 @@
 import json
+import os
 from datetime import datetime
 
 file_name="study_planner.json"
 
 
 def load_data():
-    try:
-        with open(file_name,'r') as file:
-            data=json.load(file)
-            if "streak" not in data:
-                data["streak"] = 0
-            return data
-    except FileNotFoundError:
-        return {}
+    if not os.path.exists(file_name):
+        return {"streak": 0, "tasks": {}}
 
+    with open(file_name, "r") as file:
+        data = json.load(file)
+
+    if "streak" not in data:
+        data["streak"] = 0
+    if "tasks" not in data:
+        data["tasks"] = {}
+
+    return data
 
 def save_data(data):
     with open(file_name,'w') as file:
         json.dump(data,file,indent=4)
 
 
-def add_tasks(today,data):
-    tasks=[]
-    n=int(input("Enter the number of tasks to be added : "))
+def add_tasks(today, data):
+    n = int(input("Enter the number of tasks to be added: "))
 
+    new_tasks = []
     for i in range(n):
-        task=input(f"Enter task{i+1} : ")
-        tasks.append({"task":task ,"completed":False,"priority":None})
-    data[today]=tasks
-    save_data(data)
-    print('TASKS ADDED SUCCESSFULLY✅')
+        task = input(f"Enter task {i+1}: ")
+        new_tasks.append({
+            "task": task,
+            "completed": False,
+            "priority": None
+        })
 
-def set_priority(data,today=None):
+    if today in data["tasks"]:
+        data["tasks"][today].extend(new_tasks)
+    else:
+        data["tasks"][today] = new_tasks
+
+    save_data(data)
+    print("TASKS ADDED SUCCESSFULLY ✅")
+
+
+def set_priority(data, today=None):
     if today is None:
         today = str(date.today())
 
-    if today not in data:
+    if today not in data["tasks"]:
         print("No tasks for today ❌")
         return
-    tasks=data[today]
-    n=int(input("No. of tasks to be prioritised: "))
-    for i in range(n):
-        task_name=input("Task to be prioritised:")
-        priority=input("Priority:")
+
+    tasks = data["tasks"][today]
+
+    n = int(input("No. of tasks to be prioritised: "))
+    for _ in range(n):
+        task_name = input("Task to be prioritised: ")
+        priority = input("Priority: ")
 
         for task in tasks:
-            if task['task']==task_name:
-                task['priority']=priority
+            if task["task"] == task_name:
+                task["priority"] = priority
+
     save_data(data)
-    print("Priority is set✅")
+    print("Priority is set ✅")
 
-
-def mark_task_completed(today,data):
-    if today not in data:
-        print(f"No tasks found for {today}🥲")
+def mark_task_completed(today, data):
+    if today not in data["tasks"]:
+        print(f"No tasks found for {today} 🥲")
         return
-    tasks=data[today]
-    n=int(input("Enter the number of tasks to be marked : "))
 
-    for i in range(n):
-        task_name=input("enter the task:")
-        found=False
+    tasks = data["tasks"][today]
+    n = int(input("Enter the number of tasks to be marked: "))
+
+    for _ in range(n):
+        task_name = input("Enter the task: ")
         for task in tasks:
-            if task['task']==task_name:
-                task['completed']=True
-                found=True
+            if task["task"] == task_name:
+                task["completed"] = True
                 break
+        else:
+            print("Task not found 👎🏻")
 
-
-        if not found:
-             print("Task not found👎🏻")
-             return
-
-
-    tasks=data[today]
     save_data(data)
-    print('Tasks are marked 👍')
-
+    print("Tasks are marked 👍")
 
 
 from datetime import date
 
-def list_tasks(data,today=None):
+def list_tasks(data, today=None):
     if today is None:
         today = str(date.today())
 
-    if today not in data:
+    if today not in data["tasks"]:
         print("No tasks for today ❌")
         return
 
-    for i, task in enumerate(data[today], start=1):
+    for i, task in enumerate(data["tasks"][today], start=1):
         status = "✅ Completed" if task["completed"] else "❌ Pending"
-        print(f"{i}. {task['task']} — {status},{task['priority']}")
+        print(f"{i}. {task['task']} — {status}, {task['priority']}")
 
 
-def show_progress(today,data):
-    if today not in data:
-        print("No tasks for today❌")
+def show_progress(today, data):
+    if today not in data["tasks"]:
+        print("No tasks for today ❌")
         return
-    tasks=data[today]
-    done=sum(task['completed'] for task in tasks)
-    total=len(tasks)
 
-    percentage=(done/total)*100
-    print(f"Today's completion : {percentage:.2f}%📈")
+    tasks = data["tasks"][today]
+    done = sum(task["completed"] for task in tasks)
+    total = len(tasks)
+
+    percentage = (done / total) * 100
+    print(f"Today's completion: {percentage:.2f}% 📈")
 
 
 def delete_task(data, today=None):
-    from datetime import date
-
     if today is None:
         today = str(date.today())
 
-    if today not in data or not data[today]:
+    if today not in data["tasks"] or not data["tasks"][today]:
         print("No tasks to delete ❌")
         return
-    list_tasks(data)
-    n=int(input("Enter the number of tasks to be deleted : "))
 
-    for i in range(n):
-         try:
-             choice = int(input("\nEnter task number to delete: "))
+    list_tasks(data, today)
 
-         except ValueError:
-             print("Please enter a valid number ❌")
-             return
-         confirm = input("Are you sure? (y/n): ")
-         if confirm:
-             deleted_task = data[today].pop(choice - 1)
+    choice = int(input("Enter task number to delete: "))
+    confirm = input("Are you sure? (y/n): ")
 
-    if not data[today]:
-        del data[today]
-    save_data(data)
-    print(f"Task '{deleted_task['task']}' deleted successfully 🗑️")
-    print("List of tasks after deleting the task is:\n")
-    list_tasks(data)
+    if confirm.lower() == "y":
+        deleted_task = data["tasks"][today].pop(choice - 1)
+
+        if not data["tasks"][today]:
+            del data["tasks"][today]
+
+        save_data(data)
+        print(f"Task '{deleted_task['task']}' deleted successfully 🗑️")
 
 
 def main():
